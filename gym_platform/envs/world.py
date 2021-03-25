@@ -3,7 +3,7 @@ from gym import error, spaces, utils
 from gym.utils import seeding
 
 
-class PlatformEnv(gym.Env):
+class WorldEnv(gym.Env):
     def __init__(self):
         super().__init__()
 
