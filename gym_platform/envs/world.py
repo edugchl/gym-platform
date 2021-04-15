@@ -1,9 +1,11 @@
-import time
+from datetime import datetime
 
 import numpy as np
 import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
+
+from utils import time_elapsed
 
 
 class WorldEnv(gym.Env):
@@ -17,22 +19,33 @@ class WorldEnv(gym.Env):
         cos_feat = np.cos(2 * np.pi * t/max_val)
         return sin_feat, cos_feat
 
-    def _get_obs(self):
-        year, month, day, hour, min, day_of_week = map(int, time.strftime("%Y %m %d %H %M %w").split())
+    def timestamp_to_features(self, ts):
+        month, day, hour, minute, day_of_week = ts.month, ts.day, ts.hour, ts.minute, ts.weekday()
         month_feat = self._encode_cycle(month, 12)
         day_feat = self._encode_cycle(day, 31)
         hour_feat = self._encode_cycle(hour, 23)
-        min_feat = self._encode_cycle(month, 59)
+        min_feat = self._encode_cycle(minute, 59)
         dow_feat = self._encode_cycle(day_of_week, 6)
-        datetime_state = np.array([month_feat, day_feat, hour_feat, min_feat, dow_feat]).flatten()
-        return datetime_state
+        features = np.array([month_feat, day_feat, hour_feat, min_feat, dow_feat]).flatten()
+        return features
+
+    @property
+    def current_time(self):
+        return datetime.now()
+
+    @property
+    def hours_elapsed(self):
+        elapsed = time_elapsed(self.start_time, self.current_time)
+        return elapsed
 
     def reset(self):
-        obs = self._get_obs()
-        return obs
+        self.start_time = self.current_time
+        return self.timestamp_to_features(self.start_time)
 
-    def step(self, action):
-        pass
+    def step(self):
+        now = self.current_time
+        obs, reward, terminal, _ = self.timestamp_to_features(now), None, False, None
+        return obs, reward, terminal, _
 
     def render(self, mode):
         pass

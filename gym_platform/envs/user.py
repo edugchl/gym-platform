@@ -1,10 +1,13 @@
 from datetime import datetime
+from collections import defaultdict
 
 import numpy as np
 import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
 from sklearn.preprocessing import LabelBinarizer
+
+from utils import time_elapsed
 
 
 class UserEnv(gym.Env):
@@ -17,69 +20,71 @@ class UserEnv(gym.Env):
     job_encoder = LabelBinarizer()
     job_encoder.fit(JOB_LIST)
 
-    def __init__(self, job_type, num_dependents):
+    def __init__(self, world, job_type, num_dependents):
         super().__init__()
-        self.job_type = job_type
+        self.world = world
+        self.state = defaultdict(dict)
+        self.state['user']['num_dependents'] = num_dependents
+        self.state['user']['job_type'] = job_type
         # Encoded the job type and remove last dim to avoid collinearity 
-        self.job_encoded = job_encoder.transform(job_type)[:,:-1]
-        self.num_dependents = num_dependents
-        self.state = None
+        # self.state['user']['job_encoded'] = job_encoder.transform(job_type)[:,:-1]
 
-    def _compute_freeness(self):
-        # model free time based on job and dependents
+    def _compute_freeness(self, num_dependents, hour_of_day, day_of_week):
+        """Model free time based on job and dependents.
+        """
         # A simple way to compute to get the program up and run
         weekday_freeness = np.random.uniform(0.5,0.8) if day_of_week in range(1,6) else 0.9
-        hour_freeness = np.random.uniform(0.7,0.9) if hour in range(19,23) else 0.3
-        dependent_discount = -np.log(self.num_dependents+0.1)+1.04139268516     # not work if num_dependents>10
+        hour_freeness = np.random.uniform(0.7,0.9) if hour_of_day in range(19,23) else 0.3
+        dependent_discount = -np.log(num_dependents+0.1)+1.04139268516     # not work if num_dependents>10
         freeness = weekday_freeness * hour_freeness * dependent_discount
         return freeness
 
-    def _compute_notification_burden(self):
+    def _compute_notification_burden(self, hrs_since_notification):
         # A simple way to compute to get the program up and run
-        notification_burden = (log(-self.hrs_since_notification+30.001)+2)/3.47713573096
+        notification_burden = (np.log(-hrs_since_notification+30.001)+2)/3.47713573096
         return notification_burden
     
     def _get_obs(self):
-        """Transform the state into observation. \
-        The benefit of computing freeness and notification burden is that \
-        we can encode our knowledge about the human behaviour into the function, \
+        """Transform the state into observation. 
+        The benefit of computing freeness and notification burden is that 
+        we can encode our knowledge about the human behaviour into the function, 
         so that our agent does not need to learn from an extremely large state space.
+
+        The observation will be fed to agent to compute actions and estimate rewards. 
         """
-        freeness = self._compute_freeness()
-        notification_burden = self._compute_notification_burden()
+        # get the varaibles from state
+        num_dependents = self.state['user']['num_dependents']
+        timestamp = self.state['world']['time']
+        hour_of_day, day_of_week = timestamp.hour, timestamp.weekday()
+        # transform into observation
+        freeness = self._compute_freeness(num_dependents, hour_of_day, day_of_week)
+        notification_burden = self._compute_notification_burden(hrs_since_notification)
+        # TODO: add job features
         return np.array([freeness, notification_burden])
 
     def reset(self):
         """Reset the user state to initial values, and return obs."""
-        now = datetime.now()
-        self.last_notification = now
-        self.hrs_since_notification = 0
-        self.state = np.array([hrs_since_notification])
+        now = self.world.current_time
+        self.state['notification']['last_notification'] = now
+        self.state['notification']['hrs_since_notification'] = 0
+        self.state['world']['time'] = now
         return self._get_obs()
-
-    @staticmethod
-    def time_elapsed(t1, t2, unit='hours', digit=2):
-        elapsed = t2 - t1
-        if unit == 'hours':
-            return round(elapsed.total_seconds()/3600, digit)
-        elif unit == 'minutes':
-            return round(elapsed.total_seconds()/60, digit)
-        elif unit == 'seconds':
-            return round(elapsed.total_seconds(), digit)
-        else:
-            raise NotImplementedError('Required unit is not implemented.')
 
     def _act(self, action):
         assert (action==0) or (action==1)
-        now = datetime.now()
-        
+        # get the state
+        last_notification = self.state['notification']['last_notification']
+        now = self.world.current_time
+        # compute
         if action == 0:
-            self.hrs_since_notification = time_elapsed(self.last_notification, now)
+            hrs_since_notification = time_elapsed(last_notification, now)
         else:
-            self.last_notification = now
-            self.hrs_since_notification = 0.0
-
-        self.state = np.array([self.hrs_since_notification])
+            last_notification = now
+            hrs_since_notification = 0.0
+        # update the state
+        self.state['notification']['last_notification'] = last_notification
+        self.state['notification']['hrs_since_notification'] = hrs_since_notification
+        self.state['world']['time'] = now
 
     def __direction_and_gate(self, a, b):
         if a == 1 and b == 1:
@@ -117,12 +122,9 @@ class UserEnv(gym.Env):
             anti_burden = 1 - notification_burden - 0.5
             direction = self.__direction_nand_gate(free>=0, anti_burden>=0)
             magnitude = 3.0 if direction == 1 else 1.0
+        
         reward = direction * magnitude
         return reward
-
-    def _is_terminal(self):
-        # assume no terminal state in the single-user environment
-        return False
 
     def step(self, action):
         # update current state
@@ -131,7 +133,8 @@ class UserEnv(gym.Env):
         obs = self._get_obs()
         # reward
         reward = self._compute_reward(obs, action)
-        terminal = self._is_terminal()
+        # assume no terminal state in the single-user environment
+        terminal = False
         return self._get_obs(), reward, terminal, {}
 
     def render(self, mode):
