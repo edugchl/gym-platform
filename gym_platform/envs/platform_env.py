@@ -8,8 +8,7 @@ class PlatformEnv(gym.Env):
         super().__init__()
 
     def reset(self):
-        obs = self._get_obs()
-        return obs
+        pass
 
     def step(self, action):
         pass
