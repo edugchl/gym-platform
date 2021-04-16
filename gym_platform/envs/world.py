@@ -5,7 +5,7 @@ import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
 
-from utils import time_elapsed
+from gym_platform.envs.utils import time_elapsed
 
 
 class WorldEnv(gym.Env):

@@ -7,7 +7,7 @@ from gym import error, spaces, utils
 from gym.utils import seeding
 from sklearn.preprocessing import LabelBinarizer
 
-from utils import time_elapsed
+from gym_platform.envs.utils import time_elapsed
 
 
 class UserEnv(gym.Env):
@@ -54,6 +54,7 @@ class UserEnv(gym.Env):
         """
         # get the varaibles from state
         num_dependents = self.state['user']['num_dependents']
+        hrs_since_notification = self.state['notification']['hrs_since_notification']
         timestamp = self.state['world']['time']
         hour_of_day, day_of_week = timestamp.hour, timestamp.weekday()
         # transform into observation
