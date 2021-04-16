@@ -6,6 +6,4 @@ The platform environment is an artifical environment to simulate the data of use
 
 ### minor
 
-Currenly we first assign the state to local variables before \
-computing and updating the state. Alternatively, we can use \
-getter and setter.
+Currenly we first assign the state to local variables before computing and updating the state. Alternatively, we can use getter and setter.
