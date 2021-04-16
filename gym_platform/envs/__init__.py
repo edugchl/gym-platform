@@ -1,1 +1,1 @@
-from gym_platform.envs.platform_env import PlatformEnv
+from gym_platform.envs.platform import PlatformEnv

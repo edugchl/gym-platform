@@ -11,8 +11,8 @@ class PlatformEnv(gym.Env):
         self.world_env = world_env
 
     def reset(self):
-        user_obs = self.user_env.reset()
         world_obs = self.world_env.reset()
+        user_obs = self.user_env.reset()
         obs = np.concatenate((user_obs, world_obs), axis=0)
         return obs
 

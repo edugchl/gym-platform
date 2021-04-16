@@ -1,4 +1,5 @@
-from datetime import datetime
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 
 import numpy as np
 import gym
@@ -9,8 +10,15 @@ from gym_platform.envs.utils import time_elapsed
 
 
 class WorldEnv(gym.Env):
-    def __init__(self):
+    """
+    Args:
+        - ratio: using it to change the speed of the time, it is an exchange rate between the seconds in the artificial \
+                world and the real world. For instance, if ratio=3600, it means that 1 second in real world equals to 1 hour \
+                (3600 seconds) in the artificial world.
+    """
+    def __init__(self, ratio: int):
         super().__init__()
+        self.ratio = ratio
 
     def _encode_cycle(self, t, max_val):
         # encode the datetime and capture the cyclical pattern
@@ -31,6 +39,14 @@ class WorldEnv(gym.Env):
 
     @property
     def current_time(self):
+        """Time in the aritifical world."""
+        seconds_elapsed_real = time_elapsed(self.start_time, self.local_time, unit='seconds', digit=10)
+        seconds_elapsed_aritifical = seconds_elapsed_real * self.ratio
+        current_time_aritifical = self.start_time + timedelta(seconds=seconds_elapsed_aritifical)
+        return current_time_aritifical
+
+    @property
+    def local_time(self):
         return datetime.now()
 
     @property
@@ -39,7 +55,7 @@ class WorldEnv(gym.Env):
         return elapsed
 
     def reset(self):
-        self.start_time = self.current_time
+        self.start_time = datetime.now()
         return self.timestamp_to_features(self.start_time)
 
     def step(self):
