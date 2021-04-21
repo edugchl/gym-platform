@@ -34,13 +34,15 @@ class UserEnv(gym.Env):
         # A simple way to compute to get the program up and run
         weekday_freeness = np.random.uniform(0.5,0.8) if day_of_week in range(1,6) else 0.9
         hour_freeness = np.random.uniform(0.7,0.9) if hour_of_day in range(19,23) else 0.3
-        dependent_discount = -np.log(num_dependents+0.1)+1.04139268516     # not work if num_dependents>10
+        dependent_discount = np.clip(-np.log(num_dependents/10+0.1), 0, 1)
         freeness = weekday_freeness * hour_freeness * dependent_discount
         return freeness
 
     def compute_notification_burden(self, hrs_since_notification):
         # A simple way to compute to get the program up and run
-        notification_burden = (np.log(-hrs_since_notification+30.001)+2)/3.47713573096
+        alpha = -3e-06  # control the cycle 
+        e = 4   # control how fast user feels stressed
+        notification_burden = np.clip(alpha*hrs_since_notification**(e) + 1, 0, 1)
         return notification_burden
     
     def _get_obs(self):
