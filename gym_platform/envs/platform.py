@@ -5,6 +5,7 @@ from gym.utils import seeding
 
 
 class PlatformEnv(gym.Env):
+    metadata = {'render.modes': ['human']}
     def __init__(self, user_env, world_env):
         super().__init__()
         self.user_env = user_env
@@ -34,7 +35,8 @@ class PlatformEnv(gym.Env):
         obs, reward, terminal, _ = self._step(action)
         return obs, reward, terminal, _
 
-    def render(self, mode):
+    def render(self, mode='human'):
+        # TODO: render the env
         pass
 
     def close(self):

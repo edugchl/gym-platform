@@ -28,7 +28,7 @@ class UserEnv(gym.Env):
         # Encoded the job type and remove last dim to avoid collinearity 
         # self.state['user']['job_encoded'] = job_encoder.transform(job_type)[:,:-1]
 
-    def _compute_freeness(self, num_dependents, hour_of_day, day_of_week):
+    def compute_freeness(self, num_dependents, hour_of_day, day_of_week):
         """Model free time based on job and dependents.
         """
         # A simple way to compute to get the program up and run
@@ -38,7 +38,7 @@ class UserEnv(gym.Env):
         freeness = weekday_freeness * hour_freeness * dependent_discount
         return freeness
 
-    def _compute_notification_burden(self, hrs_since_notification):
+    def compute_notification_burden(self, hrs_since_notification):
         # A simple way to compute to get the program up and run
         notification_burden = (np.log(-hrs_since_notification+30.001)+2)/3.47713573096
         return notification_burden
@@ -57,8 +57,8 @@ class UserEnv(gym.Env):
         timestamp = self.state['world']['time']
         hour_of_day, day_of_week = timestamp.hour, timestamp.weekday()
         # transform into observation
-        freeness = self._compute_freeness(num_dependents, hour_of_day, day_of_week)
-        notification_burden = self._compute_notification_burden(hrs_since_notification)
+        freeness = self.compute_freeness(num_dependents, hour_of_day, day_of_week)
+        notification_burden = self.compute_notification_burden(hrs_since_notification)
         # TODO: add job features
         return np.array([freeness, notification_burden])
 

@@ -15,4 +15,4 @@ while not terminal:
     time.sleep(1)
     action = np.random.choice(2)
     new_obs, r, terminal, _ = platform.step(action)
-    print(f'state: {platform.user_env.state}\n, obs: {new_obs}\n, action:{action}, reward:{r}')
+    print(f'state: {platform.user_env.state}\n, obs: {new_obs}\n, action:{action}, reward:{r} \n')
