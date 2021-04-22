@@ -6,6 +6,24 @@ from gym.utils import seeding
 
 class PlatformEnv(gym.Env):
     """
+    Description:
+        TODO: add text
+    
+    Observation:
+        TODO: add text
+
+    Actions:
+        Type: Discrete(2)
+        Num   Action
+        0     Do not send notification
+        1     Send notification
+
+    Reward:
+        TODO: add text
+
+    Episode Termination:
+        TODO: add text
+
     Args:
         - til_doomsday: no. of hours until doomsday. i.e. terminal=True
     """
