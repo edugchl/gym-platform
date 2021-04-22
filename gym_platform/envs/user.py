@@ -120,16 +120,28 @@ class UserEnv(gym.Env):
         """
         freeness, notification_burden = obs[0], obs[1]
         
+        # take action
         if action == 1:
             free = freeness - 0.6
             anti_burden = 1 - notification_burden - 0.7
             direction = self.__direction_and_gate(free>=0, anti_burden>=0)
-            magnitude = 5.0 if direction == 1 else 3.0
+            # if ok to receive notification, get +5.0
+            if direction == 1:
+                magnitude = 5.0 
+            # if not ok to receive notification, get -3.0
+            else:
+                magnitude = 3.0
+        # not take action
         else:
             free = freeness - 0.5
             anti_burden = 1 - notification_burden - 0.5
             direction = self.__direction_nand_gate(free>=0, anti_burden>=0)
-            magnitude = 3.0 if direction == 1 else 1.0
+            # if not ok to receive notification, get +3.0
+            if direction == 1:
+                magnitude = 0.01
+            # if ok to receive notification, get -1.0
+            else:
+                magnitude = 0.5
         
         reward = direction * magnitude
         return reward
