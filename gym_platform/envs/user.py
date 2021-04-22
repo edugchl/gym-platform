@@ -28,6 +28,12 @@ class UserEnv(gym.Env):
         # Encoded the job type and remove last dim to avoid collinearity 
         # self.state['user']['job_encoded'] = job_encoder.transform(job_type)[:,:-1]
 
+        # obs: freeness, notification_burden
+        low = np.array([0, 0])
+        high = np.array([1, 1])
+        self.action_space = spaces.Discrete(2)
+        self.observation_space = spaces.Box(low, high, dtype=np.float64)
+
     def compute_freeness(self, num_dependents, hour_of_day, day_of_week):
         """Model free time based on job and dependents.
         """

@@ -19,6 +19,7 @@ class WorldEnv(gym.Env):
     def __init__(self, ratio: int):
         super().__init__()
         self.ratio = ratio
+        self.observation_space = spaces.Box(low=-1, high=1, shape=(10,), dtype=np.float64)
 
     def _encode_cycle(self, t, max_val):
         # encode the datetime and capture the cyclical pattern

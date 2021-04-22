@@ -13,8 +13,8 @@ world_env = WorldEnv(ratio=3600)
 user_env = UserEnv(world_env, 'WHITE COLLAR', 0)
 platform = PlatformEnv(user_env, world_env)
 
-model = A2C('MlpPolicy', platform, verbose=1)
-model.learn()
+model = A2C('MlpPolicy', platform, verbose=0)
+model.learn(total_timesteps=1000)
 
 terminal = False
 obs = platform.reset()
