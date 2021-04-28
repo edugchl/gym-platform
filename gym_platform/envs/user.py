@@ -33,6 +33,7 @@ class UserEnv(gym.Env):
         high = np.array([1, 1])
         self.action_space = spaces.Discrete(2)
         self.observation_space = spaces.Box(low, high, dtype=np.float64)
+        self.observation_name = ['freeness', 'notification_burden']
 
     def compute_freeness(self, num_dependents, hour_of_day, day_of_week):
         """Model free time based on job and dependents.
@@ -72,6 +73,7 @@ class UserEnv(gym.Env):
 
     def reset(self):
         """Reset the user state to initial values, and return obs."""
+        self.world.reset()
         now = self.world.current_time
         self.state['notification']['last_notification'] = now
         self.state['notification']['hrs_since_notification'] = 0
@@ -119,7 +121,7 @@ class UserEnv(gym.Env):
             elif anti_burden <= 0.6:
                 reward = -notification_burden
             else:
-                reward = anti_burden
+                reward = 1
 
         # not take action
         else:
