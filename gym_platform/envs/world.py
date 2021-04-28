@@ -20,6 +20,13 @@ class WorldEnv(gym.Env):
         super().__init__()
         self.ratio = ratio
         self.observation_space = spaces.Box(low=-1, high=1, shape=(10,), dtype=np.float64)
+        self.observation_name = [
+            'month_feat_sin', 'month_feat_cos', 
+            'day_feat_sin',  'day_feat_cos', 
+            'hour_feat_sin', 'hour_feat_cos', 
+            'min_feat_sin', 'min_feat_cos', 
+            'dow_feat_sin', 'dow_feat_cos',
+            ]
 
     def _encode_cycle(self, t, max_val):
         # encode the datetime and capture the cyclical pattern
@@ -41,7 +48,7 @@ class WorldEnv(gym.Env):
     @property
     def current_time(self):
         """Time in the aritifical world."""
-        seconds_elapsed_real = time_elapsed(self.start_time, self.local_time, unit='seconds', digit=10)
+        seconds_elapsed_real = time_elapsed(self.start_time, self.local_time, unit='seconds', digit=20)
         seconds_elapsed_aritifical = seconds_elapsed_real * self.ratio
         current_time_aritifical = self.start_time + timedelta(seconds=seconds_elapsed_aritifical)
         return current_time_aritifical

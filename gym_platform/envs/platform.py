@@ -37,6 +37,7 @@ class PlatformEnv(gym.Env):
         low = np.concatenate([np.zeros(2), np.ones(10)*-1])
         high = np.ones(12)
         self.observation_space = spaces.Box(low=low, high=high, dtype=np.float64)
+        self.observation_name = user_env.observation_name + world_env.observation_name
         self.action_space = spaces.Discrete(2)
 
     def reset(self):

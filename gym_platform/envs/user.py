@@ -33,6 +33,7 @@ class UserEnv(gym.Env):
         high = np.array([1, 1])
         self.action_space = spaces.Discrete(2)
         self.observation_space = spaces.Box(low, high, dtype=np.float64)
+        self.observation_name = ['freeness', 'notification_burden']
 
     def compute_freeness(self, num_dependents, hour_of_day, day_of_week):
         """Model free time based on job and dependents.
@@ -72,6 +73,7 @@ class UserEnv(gym.Env):
 
     def reset(self):
         """Reset the user state to initial values, and return obs."""
+        self.world.reset()
         now = self.world.current_time
         self.state['notification']['last_notification'] = now
         self.state['notification']['hrs_since_notification'] = 0
@@ -92,19 +94,7 @@ class UserEnv(gym.Env):
         # update the state
         self.state['notification']['last_notification'] = last_notification
         self.state['notification']['hrs_since_notification'] = hrs_since_notification
-        self.state['world']['time'] = now
-
-    def __direction_and_gate(self, a, b):
-        if a == 1 and b == 1:
-            return 1
-        else:
-            return -1
-
-    def __direction_nand_gate(self, a, b):
-        if a == 1 and b == 1:
-            return -1
-        else:
-            return 1    
+        self.state['world']['time'] = now 
 
     def _compute_reward(self, obs, action):
         """Try to model the reward given by user, \
@@ -119,31 +109,29 @@ class UserEnv(gym.Env):
         reward (more) true positive and (less) true negative.
         """
         freeness, notification_burden = obs[0], obs[1]
-        
+        anti_burden = 1 - notification_burden
+        hour = self.state['world']['time'].hour
+
         # take action
         if action == 1:
-            free = freeness - 0.6
-            anti_burden = 1 - notification_burden - 0.7
-            direction = self.__direction_and_gate(free>=0, anti_burden>=0)
-            # if ok to receive notification, get +5.0
-            if direction == 1:
-                magnitude = 5.0 
-            # if not ok to receive notification, get -3.0
+            if 7 >= hour >= 0:
+                reward = -1
+            elif hour <= 18:
+                reward = -(18-hour)/18
+            elif anti_burden <= 0.6:
+                reward = -notification_burden
             else:
-                magnitude = 3.0
+                reward = 1
+
         # not take action
         else:
-            free = freeness - 0.5
-            anti_burden = 1 - notification_burden - 0.5
-            direction = self.__direction_nand_gate(free>=0, anti_burden>=0)
-            # if not ok to receive notification, get +3.0
-            if direction == 1:
-                magnitude = 0.01
-            # if ok to receive notification, get -1.0
+            if 18 >= hour >= 0:
+                reward = 0
+            elif anti_burden <= 0.6:
+                reward = 0.001
             else:
-                magnitude = 0.5
-        
-        reward = direction * magnitude
+                reward = -anti_burden
+                
         return reward
 
     def step(self, action):
