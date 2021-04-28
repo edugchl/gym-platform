@@ -92,19 +92,7 @@ class UserEnv(gym.Env):
         # update the state
         self.state['notification']['last_notification'] = last_notification
         self.state['notification']['hrs_since_notification'] = hrs_since_notification
-        self.state['world']['time'] = now
-
-    def __direction_and_gate(self, a, b):
-        if a == 1 and b == 1:
-            return 1
-        else:
-            return -1
-
-    def __direction_nand_gate(self, a, b):
-        if a == 1 and b == 1:
-            return -1
-        else:
-            return 1    
+        self.state['world']['time'] = now 
 
     def _compute_reward(self, obs, action):
         """Try to model the reward given by user, \
