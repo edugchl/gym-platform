@@ -117,7 +117,7 @@ class UserEnv(gym.Env):
             if 7 >= hour >= 0:
                 reward = -1
             elif hour <= 18:
-                reward = -(18-hour)/18
+                reward = -(18-hour/2)/18
             elif anti_burden <= 0.6:
                 reward = -notification_burden
             else:

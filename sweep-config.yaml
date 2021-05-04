@@ -4,20 +4,21 @@ metric:
   goal: maximize
   name: mean_rewards
 parameters:
-  # episodes: 
-  #   values: [10, 50, 100, 500, 1000]
-  # world_time_ratio:
-  #   values: [3600, 36000]
-  # platform_doomsday:
-  #   values: [168, 720, 1440, 999999999]
-  # agent_timesteps:
-  #   values: [24, 168, 720, 1440]
   episodes: 
-    values: [3, 8, 15]
+    values: [10, 50, 100, 500, 1000]
   world_time_ratio:
-    values: [36000]
+    values: [360000]
   platform_doomsday:
-    values: [168]
+    values: [168, 720, 1440, 999999999]
   agent_timesteps:
-    values: [168]
+    values: [24, 168, 720, 1440]
+  ############### for testing ###############
+  # episodes: 
+  #   values: [3, 8, 15]
+  # world_time_ratio:
+  #   values: [36000]
+  # platform_doomsday:
+  #   values: [168]
+  # agent_timesteps:
+  #   values: [168]
     

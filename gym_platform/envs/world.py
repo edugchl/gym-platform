@@ -12,6 +12,7 @@ from gym_platform.envs.utils import time_elapsed
 class WorldEnv(gym.Env):
     """
     Args:
+        #TODO: review meaning of ratio
         - ratio: using it to change the speed of the time, it is an exchange rate between the seconds in the artificial \
                 world and the real world. For instance, if ratio=3600, it means that 1 second in real world equals to 1 hour \
                 (3600 seconds) in the artificial world.
