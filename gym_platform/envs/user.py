@@ -1,4 +1,5 @@
 from collections import defaultdict
+from datetime import datetime, timedelta
 
 import numpy as np
 import gym
@@ -9,144 +10,102 @@ from sklearn.preprocessing import LabelBinarizer
 from gym_platform.envs.utils import time_elapsed
 
 
-class UserEnv(gym.Env):
-    """
-    Attributes:
-        - state: the state of a user; what we observe and understand
-        - obs: observation space, transformed state; input to agent
-    """
-    JOB_LIST = ['WHITE COLLAR','BLUE COLLAR', 'ON SHIFT']
-    job_encoder = LabelBinarizer()
-    job_encoder.fit(JOB_LIST)
+class User(gym.Env):
+    def __init__(
+        self, 
+        job_type: str, 
+        num_dependents: int, 
+        dt: datetime, 
+        alpha: float = -3e-06,
+        e: float = 4.0, 
+        freeness_threshold: float = 0.5,
+        burden_threshold: float = 0.8,
+        ):
+        self.job_type = job_type
+        self.num_dependents = num_dependents
+        self.start = dt
+        self.alpha = alpha # control the burden cycle 
+        self.e = e # control how fast users feel stressed
+        self.freeness_threshold = freeness_threshold
+        self.burden_threshold = burden_threshold
+        self.min_freeness = 0.0
+        self.max_freeness = 1.0
+        self.min_burden = 0.0
+        self.max_burden = 1.0
 
-    def __init__(self, world, job_type, num_dependents):
-        super().__init__()
-        self.world = world
-        self.state = defaultdict(dict)
-        self.state['user']['num_dependents'] = num_dependents
-        self.state['user']['job_type'] = job_type
-        # Encoded the job type and remove last dim to avoid collinearity 
-        # self.state['user']['job_encoded'] = job_encoder.transform(job_type)[:,:-1]
-
-        # obs: freeness, notification_burden
-        low = np.array([0, 0])
-        high = np.array([1, 1])
         self.action_space = spaces.Discrete(2)
+        low = np.array([self.min_freeness, self.min_burden])
+        high = np.array([self.max_freeness, self.max_burden])
         self.observation_space = spaces.Box(low, high, dtype=np.float64)
-        self.observation_name = ['freeness', 'notification_burden']
 
-    def compute_freeness(self, num_dependents, hour_of_day, day_of_week):
-        """Model free time based on job and dependents.
-        """
-        # A simple way to compute to get the program up and run
-        weekday_freeness = np.random.uniform(0.5,0.8) if day_of_week in range(1,6) else 0.9
-        hour_freeness = np.random.uniform(0.7,0.9) if hour_of_day in range(19,23) else 0.3
-        dependent_discount = np.clip(-np.log(num_dependents/10+0.1), 0, 1)
-        freeness = weekday_freeness * hour_freeness * dependent_discount
+    @property
+    def freeness(self, dt: datetime):
+        # TODO: test it
+        job_freeness = self.job_freeness(job=self.job_type, dt=dt)
+        dependent_freeness = self.dependent_freeness(num=self.num_dependents)
+        freeness = self.max_freeness * job_freeness * dependent_freeness
         return freeness
 
-    def compute_notification_burden(self, hrs_since_notification):
-        # A simple way to compute to get the program up and run
-        alpha = -3e-06  # control the cycle 
-        e = 4   # control how fast user feels stressed
-        notification_burden = np.clip(alpha*hrs_since_notification**(e) + 1, 0, 1)
-        return notification_burden
-    
-    def _get_obs(self):
-        """Transform the state into observation. 
-        The benefit of computing freeness and notification burden is that 
-        we can encode our knowledge about the human behaviour into the function, 
-        so that our agent does not need to learn from an extremely large state space.
+    @property
+    def job_freeness(self, job, dt):
+        hour,  weekday = dt.hour, dt.weekday()
 
-        The observation will be fed to agent to compute actions and estimate rewards. 
-        """
-        # get the varaibles from state
-        num_dependents = self.state['user']['num_dependents']
-        hrs_since_notification = self.state['notification']['hrs_since_notification']
-        timestamp = self.state['world']['time']
-        hour_of_day, day_of_week = timestamp.hour, timestamp.weekday()
-        # transform into observation
-        freeness = self.compute_freeness(num_dependents, hour_of_day, day_of_week)
-        notification_burden = self.compute_notification_burden(hrs_since_notification)
-        # TODO: add job features
-        return np.array([freeness, notification_burden])
-
-    def reset(self):
-        """Reset the user state to initial values, and return obs."""
-        self.world.reset()
-        now = self.world.current_time
-        self.state['notification']['last_notification'] = now
-        self.state['notification']['hrs_since_notification'] = 0
-        self.state['world']['time'] = now
-        return self._get_obs()
-
-    def _act(self, action):
-        assert (action==0) or (action==1)
-        # get the state
-        last_notification = self.state['notification']['last_notification']
-        now = self.world.current_time
-        # compute
-        if action == 0:
-            hrs_since_notification = time_elapsed(last_notification, now)
-        else:
-            last_notification = now
-            hrs_since_notification = 0.0
-        # update the state
-        self.state['notification']['last_notification'] = last_notification
-        self.state['notification']['hrs_since_notification'] = hrs_since_notification
-        self.state['world']['time'] = now 
-
-    def _compute_reward(self, obs, action):
-        """Try to model the reward given by user, \
-        yet ideally this should be the feedback provided by users.
+        if job == 'WHITE COLLAR':
+            weekday_score = np.random.uniform(0.5,0.8) if weekday in range(1,6) else 0.9
+            hour_score = np.random.uniform(0.7,0.9) if hour in range(18,23) else 0.3
         
-        Reward should be a function of the state, not observation. 
-        But for simplicity, assume the environment is fully observable by agent
-        and so state is the same as observation.
+        score = weekday_score * hour_score
+        return score
 
-        Reward is computed as direction * magnitude, in order to 
-        punish (more) false positive and (less) false negative, and
-        reward (more) true positive and (less) true negative.
-        """
-        freeness, notification_burden = obs[0], obs[1]
-        anti_burden = 1 - notification_burden
-        hour = self.state['world']['time'].hour
+    @property
+    def dependent_freeness(self, num):
+        score = np.clip(-np.log(num/10+0.1), 0, 1)
+        return score
 
-        # take action
-        if action == 1:
-            if 7 >= hour >= 0:
-                reward = -1
-            elif hour <= 18:
-                reward = -(18-hour/2)/18
-            elif anti_burden <= 0.6:
-                reward = -notification_burden
-            else:
-                reward = 1
+    @property
+    def burden(self, hrs_since_notification):
+        # TODO: test it
+        y = self.alpha * hrs_since_notification**(self.e) + 1
+        notification_burden = np.clip(y, 0, 1)
+        return notification_burden
 
-        # not take action
+    @property
+    def obs(self, dt):
+        freeness = self.freeness(dt)
+        hrs_since_notification = time_elapsed(self.last_notification, dt, 'hours')
+        burden = self.burden(hrs_since_notification)
+        return np.array([freeness, burden])
+
+    def get_reward(self, obs, action):
+        freeness, burden = obs[0], obs[1]
+
+        # OK to receive 
+        if (freeness>=self.freeness_threshold) and (burden<=self.burden_threshold):
+            reward = 1.0 if action == 1 else -1e05
+        # definitely not OK to receive
+        elif (freeness<=self.freeness_threshold) and (burden>=self.burden_threshold): 
+            reward = -1.0 if action == 1 else 1e05
+        # not quite sure, better not
         else:
-            if 18 >= hour >= 0:
-                reward = 0
-            elif anti_burden <= 0.6:
-                reward = 0.001
-            else:
-                reward = -anti_burden
-                
+            reward = -1e04 if action == 1 else 0.0
+        
         return reward
 
-    def step(self, action):
-        # update current state
-        self._act(action)
-        # retrieve current obs for computing rewards  
-        obs = self._get_obs()
-        # reward
-        reward = self._compute_reward(obs, action)
-        # assume no terminal state in the single-user environment
+    def reset(self):
+        elapsed = timedelta(
+            days=np.random.randint(0, 3), 
+            hours=np.random.randint(0, 23), 
+            seconds=np.random.randint(0, 86400))
+        self.last_notification = self.start - elapsed
+        obs = self.obs(self.start)
+        return obs
+        
+    def step(self, action: int, now: datetime):
+        # TODO: test it
+        obs = self.obs
+        if action == 1:
+            self.last_notification = now
+        reward = self.get_reward(obs, action)
+        obs_next = self.obs(now)
         terminal = False
-        return self._get_obs(), reward, terminal, {}
-
-    def render(self, mode):
-        pass
-
-    def close(self):
-        pass
+        return obs_next, reward, terminal, {}
