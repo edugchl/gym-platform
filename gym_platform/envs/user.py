@@ -38,7 +38,6 @@ class User(gym.Env):
         high = np.array([self.max_freeness, self.max_burden])
         self.observation_space = spaces.Box(low, high, dtype=np.float64)
 
-    @property
     def freeness(self, dt: datetime):
         # TODO: test it
         job_freeness = self.job_freeness(job=self.job_type, dt=dt)
@@ -46,7 +45,6 @@ class User(gym.Env):
         freeness = self.max_freeness * job_freeness * dependent_freeness
         return freeness
 
-    @property
     def job_freeness(self, job, dt):
         hour,  weekday = dt.hour, dt.weekday()
 
@@ -57,19 +55,16 @@ class User(gym.Env):
         score = weekday_score * hour_score
         return score
 
-    @property
     def dependent_freeness(self, num):
         score = np.clip(-np.log(num/10+0.1), 0, 1)
         return score
 
-    @property
     def burden(self, hrs_since_notification):
         # TODO: test it
         y = self.alpha * hrs_since_notification**(self.e) + 1
         notification_burden = np.clip(y, 0, 1)
         return notification_burden
 
-    @property
     def obs(self, dt):
         freeness = self.freeness(dt)
         hrs_since_notification = time_elapsed(self.last_notification, dt, 'hours')
