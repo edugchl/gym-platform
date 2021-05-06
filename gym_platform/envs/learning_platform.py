@@ -4,7 +4,7 @@ from gym import error, spaces, utils
 from gym.utils import seeding
 
 
-class PlatformEnv(gym.Env):
+class LearningPlatform(gym.Env):
     """
     Description:
         TODO: add text

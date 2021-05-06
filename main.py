@@ -6,7 +6,7 @@ import numpy as np
 from stable_baselines3 import A2C
 import wandb
 
-from gym_platform import PlatformEnv, UserEnv, WorldEnv
+from gym_platform import LearningPlatform, UserEnv, WorldEnv
 from gym_platform.envs.utils import flatten_dict
 
 
@@ -29,7 +29,7 @@ def train(hyperparameters=None):
 
     world_env = WorldEnv(ratio=config.world_time_ratio)
     user_env = UserEnv(world_env, config.user_job, config.user_dependents)
-    platform = PlatformEnv(user_env, world_env, config.platform_doomsday)
+    platform = LearningPlatform(user_env, world_env, config.platform_doomsday)
 
     model = A2C('MlpPolicy', platform, verbose=1)
     model.learn(total_timesteps=config.agent_timesteps)
