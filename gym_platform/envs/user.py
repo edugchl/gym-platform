@@ -15,7 +15,7 @@ class User(gym.Env):
         self, 
         job_type: str, 
         num_dependents: int, 
-        dt: datetime, 
+        start: datetime, 
         alpha: float = -3e-06,
         e: float = 4.0, 
         freeness_threshold: float = 0.5,
@@ -23,7 +23,7 @@ class User(gym.Env):
         ):
         self.job_type = job_type
         self.num_dependents = num_dependents
-        self.start = dt
+        self.start = start
         self.alpha = alpha # control the burden cycle 
         self.e = e # control how fast users feel stressed
         self.freeness_threshold = freeness_threshold
@@ -34,8 +34,8 @@ class User(gym.Env):
         self.max_burden = 1.0
 
         self.action_space = spaces.Discrete(2)
-        low = np.array([self.min_freeness, self.min_burden])
-        high = np.array([self.max_freeness, self.max_burden])
+        self.low = np.array([self.min_freeness, self.min_burden])
+        self.high = np.array([self.max_freeness, self.max_burden])
         self.observation_space = spaces.Box(low, high, dtype=np.float64)
 
     def freeness(self, dt: datetime):
