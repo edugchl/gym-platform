@@ -49,14 +49,30 @@ class User(gym.Env):
         hour,  weekday = dt.hour, dt.weekday()
 
         if job == 'WHITE COLLAR':
-            weekday_score = np.random.uniform(0.5,0.8) if weekday in range(1,6) else 0.9
-            hour_score = np.random.uniform(0.7,0.9) if hour in range(18,23) else 0.3
+            sleep_hours = 8
+            work_hours = 11
+
+            schedule = np.ones((7,24))
+            working_hours = list(range(8,19))
+            working_days = list(range(1,6))
+
+            sleep_schedule = np.zeros((7,sleep_hours))
+            working_schedule = np.random.uniform(low=0.1,high=0.3,size=(5,work_hours))
+            weekday_free_schedule = np.clip(np.random.normal(loc=0.7, scale=0.05, size=(5,24-sleep_hours-work_hours)),0, 1)
+            weekend_free_schedule = np.clip(np.random.normal(loc=0.9, scale=0.1, size=24-sleep_hours),0, 1)
+
+            # assume sleeping at 12 a.m.
+            schedule[:,:sleep_hours] = sleep_schedule
+            schedule[[0,6],sleep_hours:] = weekend_free_schedule
+            schedule[1:6,sleep_hours:sleep_hours+work_hours] = working_schedule
+            schedule[1:6,sleep_hours+work_hours:] = weekday_free_schedule
         
-        score = weekday_score * hour_score
+        score = schedule[weekday][hour]
         return score
 
     def dependent_freeness(self, num):
-        score = np.clip(-np.log(num/10+0.1), 0, 1)
+        score = -np.log10( (num/12) + 0.1)
+        # score = np.clip(y, 0, 1)
         return score
 
     def burden(self, hrs_since_notification):
