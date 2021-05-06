@@ -1,31 +1,39 @@
 import unittest
+from datetime import datetime
 
 import numpy as np
+import matplotlib
+import matplotlib.pyplot as plt
 
-from gym_platform import UserEnv, WorldEnv
 
+from gym_platform import User
+from utils.visualize import plot_heatmap
 
-class TestUserEnv(unittest.TestCase):
-    def test_reward_direction(self):
-        world_env = WorldEnv(ratio=3600)
-        user_env = UserEnv(world_env, 'WHITE COLLAR', 0)
-        obs = np.array([
-            [0, 0],
-            [0, 1],
-            [1, 0],
-            [1, 1]])
-        actions = np.array([0, 1])
-        directions = [True, True, False, True,
-                    False, False, True, False]
-        
-        for action in actions:
-            for ob in obs:
-                reward = user_env._compute_reward(ob, action)
-                pred_direction = (reward > 0)
-                ans = directions.pop(0)
-                print(action, ob, pred_direction, ans)
-                self.assertEqual(pred_direction, ans)
-                
+class TestUser(unittest.TestCase):
+    now = datetime.now()
+    user = User('WHITE COLLAR', 0, now)
+
+    def test_job_freeness(self):
+        data, label_x = [], []
+
+        for day in range(1, 8):
+            hour_data = []
+
+            for hour in range(0, 24): 
+                dt = datetime(self.now.year, self.now.month, day, hour)
+                score = self.user.job_freeness(job=self.user.job_type, dt=dt)
+                self.assertTrue(score >= 0 and score <= 1)
+                hour_data.append(score)
+            
+            data.append(hour_data)
+            label_x.append(dt.weekday())
+
+        label_y = list(range(0, 24))
+        data = np.array(data).T
+        # plot
+        fig = plot_heatmap(data, label_x, label_y, 'Weekday', 'Hour', 'Job Freeness')
+        plt.show()
+
 
 if __name__ == '__main__':
     unittest.main()
