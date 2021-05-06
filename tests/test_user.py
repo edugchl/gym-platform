@@ -11,7 +11,7 @@ from utils.visualize import plot_heatmap
 
 class TestUser(unittest.TestCase):
     now = datetime.now()
-    user = User('WHITE COLLAR', 10, now)
+    user = User('WHITE COLLAR', 10, now, alpha=-3e-08)
 
     def test_job_freeness(self):
         data, label_x = [], []
@@ -73,6 +73,28 @@ class TestUser(unittest.TestCase):
         data = np.array(data).T
         # plot
         fig = plot_heatmap(data, label_x, label_y, 'Weekday', 'Hour', 'Freeness')
+        plt.show()
+
+    def test_burden(self):
+        data, label_x = [], []
+        hrs_range = list(range(0, 60))
+
+        for day in range(1):
+            num_data = []
+            for hr in hrs_range: 
+                score = self.user.burden(hr)
+                self.assertTrue(score >= 0 and score <= 1)
+                num_data.append(score)
+            
+            data.append(num_data)
+            label_x.append('NA')
+
+        label_y = hrs_range
+        data = np.array(data)
+        # plot
+        fig = plot_heatmap(data, label_y, label_x, 
+                        'NA', 'Hours since notification', 
+                        'Notification burden')
         plt.show()
 
 if __name__ == '__main__':
