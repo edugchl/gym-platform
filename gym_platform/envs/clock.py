@@ -21,6 +21,9 @@ class Clock():
         self.ratio = ratio
         self.artifical_start = self.initialize(artifical_start)
         self.real_start = self.initialize(real_start)
+        # for observation space in gym env
+        self.low = np.ones(len(self.CYCLE_MAP))*-1
+        self.high = np.ones(len(self.CYCLE_MAP))
 
     def time_features(self, dt: datetime, output: str = 'numpy') -> np.array:
         features = {}
