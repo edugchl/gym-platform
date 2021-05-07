@@ -50,10 +50,7 @@ class User(gym.Env):
         if job == 'WHITE COLLAR':
             sleep_hours = 8
             work_hours = 11
-
-            schedule = np.ones((7,24))
-            working_hours = list(range(8,19))
-            working_days = list(range(1,6))
+            schedule = np.ones((7,24)) 
 
             sleep_schedule = np.zeros((7,sleep_hours))
             working_schedule = np.random.uniform(low=0.1,high=0.3,size=(5,work_hours))
