@@ -1,3 +1,4 @@
+import time
 from datetime import datetime, timedelta
 
 import numpy as np
@@ -13,18 +14,50 @@ class Clock():
         'weekday': 6,
     }
 
-    def __init__(self, ratio, artifical_start=None, real_start=None):
+    def __init__(self, ratio, step_size, artifical_start=None, real_start=None, verbose=0):
         """
         Args:
             - ratio: number of seconds in aritifical world per 1s of real world
         """
         self.ratio = ratio
+        self.step_size = step_size
+        self.verbose = verbose
         self.artifical_start = self.initialize(artifical_start)
         self.real_start = self.initialize(real_start)
+        self.artifical_current_time = self.artifical_start
+        self.real_current_time = self.real_start
         # for observation space in gym env
         self.low = np.ones(len(self.CYCLE_MAP))*-1
         self.high = np.ones(len(self.CYCLE_MAP))
         #TODO: current_time, getter, setter
+
+    @property
+    def artifical_current_time(self):
+        return self._artifical_current_time
+
+    @artifical_current_time.setter
+    def artifical_current_time(self, value: datetime):
+        self._artifical_current_time = value
+
+    @property
+    def real_current_time(self):
+        return self._real_current_time
+
+    @real_current_time.setter
+    def real_current_time(self, value: datetime):
+        self._real_current_time = value
+
+    def reset(self):
+        self.artifical_current_time = self.artifical_start
+        self.real_current_time = self.real_start
+
+        strtime = self.artifical_current_time.strftime("%Y-%m-%D %H:%M:%S")
+        print(f'Reset the clock to {strtime}.')
+
+    def step(self):
+        time.sleep(self.step_size)
+        if self.verbose:
+            print(f'Sleeping for {self.step_size} seconds...')
 
     def time_features(self, dt: datetime, output: str = 'numpy') -> np.array:
         features = {}

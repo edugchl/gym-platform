@@ -50,7 +50,7 @@ class LearningPlatform(gym.Env):
         # TODO: review
         self.clock.step()
         if self.include_time_features:
-            time_obs = self.clock.time_features(dt=now)
+            time_obs = self.clock.time_features(dt=self.clock.artifical_current_time)
             next_obs = np.concatenate((next_obs, time_obs), axis=0)
 
         terminal = False
