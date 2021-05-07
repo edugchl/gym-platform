@@ -36,7 +36,7 @@ class User(gym.Env):
         self.action_space = spaces.Discrete(2)
         self.low = np.array([self.min_freeness, self.min_burden])
         self.high = np.array([self.max_freeness, self.max_burden])
-        self.observation_space = spaces.Box(low, high, dtype=np.float64)
+        self.observation_space = spaces.Box(self.low, self.high, dtype=np.float64)
 
     def freeness(self, dt: datetime):
         job_freeness = self.job_freeness(job=self.job_type, dt=dt)
