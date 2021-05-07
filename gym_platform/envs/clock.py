@@ -24,6 +24,7 @@ class Clock():
         # for observation space in gym env
         self.low = np.ones(len(self.CYCLE_MAP))*-1
         self.high = np.ones(len(self.CYCLE_MAP))
+        #TODO: current_time, getter, setter
 
     def time_features(self, dt: datetime, output: str = 'numpy') -> np.array:
         features = {}
