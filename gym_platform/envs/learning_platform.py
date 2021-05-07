@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import numpy as np
 import gym
 from gym import error, spaces, utils
@@ -43,17 +45,19 @@ class LearningPlatform(gym.Env):
         return obs
 
     def step(self, action: int, now: datetime):
-         obs, reward, user_terminal, _ = self.user.step(action, now)
+        next_obs, reward, user_terminal, _ = self.user.step(action, now)
 
+        # TODO: review
+        self.clock.step()
         if self.include_time_features:
             time_obs = self.clock.time_features(dt=now)
-            obs = np.concatenate((obs, time_obs), axis=0)
+            next_obs = np.concatenate((next_obs, time_obs), axis=0)
 
         terminal = False
         if time_elapsed(t1=self.start, t2=now, unit='days') > self.end_days:
             terminal = True
     
-        return obs, reward, terminal, {}
+        return next_obs, reward, terminal, {}
 
     def render(self, mode='human'):
         pass
